@@ -1,0 +1,7 @@
+run following command in terminal to run the code:
+
+make clean	#remove unexpected files
+
+make #to complie the file   
+
+java Street [testfilename]	#if no testfilename provided, a default one will be loaded
