@@ -21,7 +21,6 @@ public class CLI {
 		options.addOption("port","port-num",false,"port number to listen");
 		options.addOption("dir", "directory", true, "local directory to write to");
 		options.addOption("p", "primary", false, "start as a primary server");
-
 	}
 	public boolean parse() {
 		CommandLineParser parser = new BasicParser();

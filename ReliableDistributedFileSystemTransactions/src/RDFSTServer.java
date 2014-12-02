@@ -12,10 +12,12 @@ import org.apache.commons.cli.CommandLine;
 
 
 public class RDFSTServer {
+	static enum MODE {PRIMARY,SECONDARY};
 	static final int MAX_CONNECTION=10;
 	public static Path path;
 	public static String ip="127.0.0.1";
 	public static int port=8080;
+	public static MODE serverMode=MODE.SECONDARY;
 	private static ServerSocket socket;
 		
 	public static void main(String[] args) throws Exception, IOException{
@@ -31,10 +33,10 @@ public class RDFSTServer {
 				}
 				ip=cmd.getOptionValue("ip", "127.0.0.1");
 				port=Integer.parseInt(cmd.getOptionValue("port","8080"));
+				serverMode=MODE.valueOf(cmd.getOptionValue("primary","SECONDARY"));
 			} catch (Exception e) {
 				System.err.println("Invalid Input");
 			}
-			
 		}
 		System.out.println("ip:"+ip+"\nport:"+port+"\ndir:"+path);
 		
