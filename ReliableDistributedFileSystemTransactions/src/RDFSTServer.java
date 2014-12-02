@@ -18,6 +18,7 @@ public class RDFSTServer {
 	public static String ip="127.0.0.1";
 	public static int port=8080;
 	public static MODE serverMode=MODE.SECONDARY;
+	public static Path primaryRecordPath;
 	private static ServerSocket socket;
 		
 	public static void main(String[] args) throws Exception, IOException{
@@ -31,6 +32,10 @@ public class RDFSTServer {
 				if (fileSystemPath.startsWith("~" + File.separator)) {
 				    fileSystemPath = Paths.get(System.getProperty("user.home") + fileSystemPath.toString().substring(1));
 				}
+				primaryRecordPath=Paths.get(cmd.getOptionValue("share"));
+				if (primaryRecordPath.startsWith("~" + File.separator)) {
+					primaryRecordPath = Paths.get(System.getProperty("user.home") + primaryRecordPath.toString().substring(1));
+				}
 				ip=cmd.getOptionValue("ip", "127.0.0.1");
 				port=Integer.parseInt(cmd.getOptionValue("port","8080"));
 				serverMode=MODE.valueOf(cmd.getOptionValue("primary","SECONDARY"));
@@ -38,7 +43,7 @@ public class RDFSTServer {
 				System.err.println("Invalid Input");
 			}
 		}
-		System.out.println("ip:"+ip+"\nport:"+port+"\ndir:"+fileSystemPath);
+		System.out.println("ip:"+ip+"\nport:"+port+"\ndir:"+fileSystemPath+"\nshare:"+primaryRecordPath+"\nserverMode:"+serverMode);
 		
 		socket =new ServerSocket(port,MAX_CONNECTION,InetAddress.getByName(ip));
 		
