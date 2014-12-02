@@ -25,7 +25,8 @@ public class RDFSTServer {
 	public static int port=8080;
 	public static MODE serverMode=MODE.SECONDARY;
 	public static Path primaryRecordPath;
-	private static ServerSocket socket;
+	private static ServerSocket generalSocket;
+	private static Socket toServerSocket;
 		
 	public static void main(String[] args) throws Exception{
 //		ServerSocket socket;
@@ -53,7 +54,7 @@ public class RDFSTServer {
 		System.out.println("ip:"+ip+"\nport:"+port+"\ndir:"+fileSystemPath+"\nshare:"+primaryRecordPath+"\nserverMode:"+serverMode);
 		
 		try {
-			socket =new ServerSocket(port,MAX_CONNECTION,InetAddress.getByName(ip));
+			generalSocket =new ServerSocket(port,MAX_CONNECTION,InetAddress.getByName(ip));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Create Server Socket failed");
@@ -98,7 +99,10 @@ public class RDFSTServer {
 			try{
 				Socket test=new Socket(primaryIP,primaryPort);
 				test.setKeepAlive(true);
-				(new DataOutputStream(test.getOutputStream())).writeBytes(RequestMessage.SYNCRequestMessage(ip, port).toString());
+				DataOutputStream testOut=new DataOutputStream(test.getOutputStream());
+				testOut.writeBytes(RequestMessage.SYNCRequestMessage(ip, port).toString());
+				testOut.close();
+				toServerSocket=test;
 			} catch (Exception e) {
 				// DONE: handle exception
 				System.err.println("Fail to setup socket with Primary Server");
@@ -111,13 +115,45 @@ public class RDFSTServer {
 		}
 		
 		while(true){
-			Socket DFSSocket=socket.accept();
-			BufferedReader inFromClient = new BufferedReader(new InputStreamReader(DFSSocket.getInputStream()));
-			try {
-				RequestMessage request=new RequestMessage(inFromClient);
-				(new Thread(new DFS(request,fileSystemPath,DFSSocket))).start();
-			} catch (Exception e) {
-				(new Thread(new DFS(null,fileSystemPath,DFSSocket))).start();
+			Socket inSocket=generalSocket.accept();	
+			BufferedReader bufferFromInSocket = new BufferedReader(new InputStreamReader(inSocket.getInputStream()));
+			if (serverMode==MODE.PRIMARY) {
+				try {
+					RequestMessage request=new RequestMessage(bufferFromInSocket);
+					if (request.header.method==RequestHeader.MethodType.SYNC) {
+						// save socket for future use
+						toServerSocket=inSocket;
+						System.out.println("SYNC request from "+request.data);
+						// update serverConnection info
+						if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
+							(new DataOutputStream(toServerSocket.getOutputStream())).writeBytes(RequestMessage.SYNCRequestMessage(ServerConnection.getSecondaryIP(), ServerConnection.getSecondaryPort()).toString());
+							System.out.println("Replied SYNC request.");
+						}
+					}else{
+						(new Thread(new DFS(request,fileSystemPath,inSocket))).start();
+					}
+				} catch (Exception e) {
+					//TODO: RESEND response
+					(new Thread(new DFS(null,fileSystemPath,inSocket))).start();
+				}
+			}else{
+				try {
+					RequestMessage request=new RequestMessage(bufferFromInSocket);
+					if (request.header.method==RequestHeader.MethodType.SYNC) {
+						// save socket for future use
+						toServerSocket=inSocket;
+						System.out.println("SYNC request from "+request.data);
+						// update serverConnection info
+						if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
+							System.out.println("Secondary Server is recorded.");
+						}
+					}else{
+						(new Thread(new DFS(request,fileSystemPath,inSocket))).start();
+					}
+				} catch (Exception e) {
+					//TODO: RESEND response
+					(new Thread(new DFS(null,fileSystemPath,inSocket))).start();
+				}
 			}
 		}
 	}
