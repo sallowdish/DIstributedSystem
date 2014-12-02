@@ -21,6 +21,7 @@ public class CLI {
 		options.addOption("port","port-num",false,"port number to listen");
 		options.addOption("dir", "directory", true, "local directory to write to");
 		options.addOption("p", "primary", false, "start as a primary server");
+		options.addOption("s","share",true,"network-mount path for primary.txt");
 	}
 	public boolean parse() {
 		CommandLineParser parser = new BasicParser();
@@ -31,7 +32,7 @@ public class CLI {
 
 			if (cmd.hasOption("h"))
 				help();
-			if (cmd.hasOption("dir")) {
+			if (cmd.hasOption("dir") && cmd.hasOption("share")) {
 //				log.log(Level.INFO, "Using cli argument -dir=" + cmd.getOptionValue("dir"));
 				// Whatever you want to do with the setting goes here
 				return true;
