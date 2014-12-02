@@ -11,11 +11,11 @@ public class RequestHeader {
 	public int sequenceNum=-1;
 	public int contentLength=-1;
 	
-//	private RequestHeader(){
-//		transactionID=-1;
-//		sequenceNum=-1;
-//		contentLength=-1;
-//	}
+	public RequestHeader(){
+		transactionID=-1;
+		sequenceNum=-1;
+		contentLength=-1;
+	}
 	
 	public RequestHeader(String str){
 		

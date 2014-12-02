@@ -51,7 +51,6 @@ public class RDFSTServer {
 			Socket DFSSocket=socket.accept();
 			BufferedReader inFromClient =
 		               new BufferedReader(new InputStreamReader(DFSSocket.getInputStream()));
-			
 			try {
 				RequestMessage request=new RequestMessage(inFromClient);
 				(new Thread(new DFS(request,fileSystemPath,DFSSocket))).start();
