@@ -126,8 +126,7 @@ public class RDFSTServer {
 						System.out.println("SYNC request from "+request.data);
 						// update serverConnection info
 						if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
-							(new DataOutputStream(toServerSocket.getOutputStream())).writeBytes(RequestMessage.SYNCRequestMessage(ServerConnection.getSecondaryIP(), ServerConnection.getSecondaryPort()).toString());
-							System.out.println("Replied SYNC request.");
+							System.out.println("Secondary Server is recorded.");
 						}
 					}else{
 						(new Thread(new DFS(request,fileSystemPath,inSocket))).start();
@@ -144,9 +143,7 @@ public class RDFSTServer {
 						toServerSocket=inSocket;
 						System.out.println("SYNC request from "+request.data);
 						// update serverConnection info
-						if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
-							System.out.println("Secondary Server is recorded.");
-						}
+						
 					}else{
 						(new Thread(new DFS(request,fileSystemPath,inSocket))).start();
 					}
