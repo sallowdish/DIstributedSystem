@@ -13,10 +13,19 @@ public class ResponseHeader {
 	public int contentLength;
 	
 	public ResponseHeader(RequestHeader requestHeader){
-
 		transactionID=requestHeader!=null?requestHeader.transactionID:-1;
 		sequenceNum=requestHeader!=null?requestHeader.sequenceNum:-1;
-		
+		if (requestHeader!=null) {
+			switch (requestHeader.method) {
+			case SYNC:
+				method=MethodType.SYNCACK;
+				break;
+			default:
+				method=MethodType.ACK;
+				break;
+			}
+			method=MethodType.SYNCACK;
+		}
 	}
 	
 	public ResponseHeader(String str){
