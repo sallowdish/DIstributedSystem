@@ -1,16 +1,21 @@
 
 
+import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DFS implements Runnable{
@@ -19,6 +24,7 @@ public class DFS implements Runnable{
 	public static Path root=Paths.get(System.getProperty("user.dir"));
 	private Socket currentOpenSocket;
 	public static List<Integer> workingTrancationID=new ArrayList<Integer>(0);
+	public static Set<Integer> commitedTrancationID=new HashSet<Integer>(0);
 	public static Map<Integer, Log> workingLog=new ConcurrentHashMap<Integer,Log>(0);
 	
 	
@@ -118,10 +124,15 @@ public class DFS implements Runnable{
 			if (targetLog.sequenceNum<request.header.sequenceNum || targetLog.base>request.header.sequenceNum) {
 				response=new ResponseMessage(202,request,"Invalid Sequence #. Current base is at:"+targetLog.base+" and head is at:"+targetLog.sequenceNum);
 			}else{
+				//Write data to dish
 				targetLog.writeToDisk(request.header.sequenceNum);
 				
-//				workingTrancationID.remove(Integer.valueOf(request.header.transactionID));
-//				workingLog.remove(targetLog.transcationID);
+				//record commited TNX
+				commitedTrancationID.add(request.header.transactionID);
+				File COMMITED_TNX_DB=new File(root.toFile(),".TNX_DB");
+				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(COMMITED_TNX_DB.getPath(),false)));
+				out.println(commitedTrancationID.toString());
+				out.close();
 				
 				response=new ResponseMessage(request);
 				response.header.method=ResponseHeader.MethodType.valueOf("ACK");
