@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -57,15 +58,41 @@ public class RDFSTServer {
 		}
 		
 		if (serverMode==MODE.PRIMARY) {
+//			DONE: Write/Update primary.txt
+//			DONE: Update Server Connection
+//			TODO: Wait 4 Secondary notification 
 			try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(primaryRecordPath.toString(),false)))) {
 				out.flush();
 				out.println("Primary Server:");
 				out.println(ip.toString()+":"+port);
+				out.close();
 			}catch (Exception e) {
 				System.err.println("Fail to write to primary.txt");
 				System.exit(-1);
 			}
+			//	add primary server info to ServerConnection
+			ServerConnection.setPrimaryIP(ip);
+			ServerConnection.setPrimaryPort(port);
+		}else{
+//			DONE: Read primary.txt
+//			DONE: Update Server Connection
+//			TODO: Test Reachability
+//			TODO: Send notification
+			try(BufferedReader in=new BufferedReader(new FileReader(primaryRecordPath.toString()))){
+//				Read primary.txt
+				in.readLine();
+				String[] lst=in.readLine().split(":");
+//				Update Server Connection
+				ServerConnection.setPrimaryIP(lst[0]);
+				ServerConnection.setPrimaryPort(Integer.valueOf(lst[1]));
+				ServerConnection.setSecondaryIP(ip);
+				ServerConnection.setSecondaryPort(port);
+			}catch(Exception e){
+				System.err.println("Fail to read to primary.txt");
+				System.exit(-1);
+			}
 		}
+		
 		
 		
 		while(true){
@@ -79,9 +106,6 @@ public class RDFSTServer {
 			} catch (Exception e) {
 				(new Thread(new DFS(null,fileSystemPath,DFSSocket))).start();
 			}
-			
 		}
-		
 	}
-	
 }
