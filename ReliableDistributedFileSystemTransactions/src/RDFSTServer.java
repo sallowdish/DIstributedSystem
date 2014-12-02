@@ -42,7 +42,7 @@ public class RDFSTServer {
 				}
 				ip=cmd.getOptionValue("ip", "127.0.0.1");
 				port=Integer.parseInt(cmd.getOptionValue("port","8080"));
-				serverMode=MODE.valueOf(cmd.getOptionValue("primary","SECONDARY"));
+				serverMode=cmd.hasOption("p")?MODE.PRIMARY:MODE.SECONDARY;
 			} catch (Exception e) {
 				System.err.println("Invalid Input");
 			}
@@ -57,10 +57,10 @@ public class RDFSTServer {
 		}
 		
 		if (serverMode==MODE.PRIMARY) {
-			try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(primaryRecordPath.toString(),true)))) {
-				out.println("Primary Server:\n");
-				out.println(ip.toString()+"\n");
-				out.println(port);
+			try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(primaryRecordPath.toString(),false)))) {
+				out.flush();
+				out.println("Primary Server:");
+				out.println(ip.toString()+":"+port);
 			}catch (Exception e) {
 				System.err.println("Fail to write to primary.txt");
 				System.exit(-1);
