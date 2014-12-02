@@ -37,7 +37,7 @@ public class RequestMessage {
 	public static RequestMessage SYNCRequestMessage(String secondaryIP,Integer secondaryPort){
 		RequestMessage SYNCRequest=new RequestMessage();
 		SYNCRequest.header.method=RequestHeader.MethodType.SYNC;
-		SYNCRequest.data=secondaryIP+"\n"+secondaryPort;
+		SYNCRequest.data=secondaryIP+":"+secondaryPort;
 		return SYNCRequest;
 	}
 	
