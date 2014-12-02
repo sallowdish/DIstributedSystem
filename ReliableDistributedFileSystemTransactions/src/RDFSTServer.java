@@ -1,12 +1,16 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 
@@ -21,7 +25,7 @@ public class RDFSTServer {
 	public static Path primaryRecordPath;
 	private static ServerSocket socket;
 		
-	public static void main(String[] args) throws Exception, IOException{
+	public static void main(String[] args) throws Exception{
 //		ServerSocket socket;
 		CLI scanner=new CLI(args);
 		
@@ -45,12 +49,30 @@ public class RDFSTServer {
 		}
 		System.out.println("ip:"+ip+"\nport:"+port+"\ndir:"+fileSystemPath+"\nshare:"+primaryRecordPath+"\nserverMode:"+serverMode);
 		
-		socket =new ServerSocket(port,MAX_CONNECTION,InetAddress.getByName(ip));
+		try {
+			socket =new ServerSocket(port,MAX_CONNECTION,InetAddress.getByName(ip));
+		} catch (Exception e) {
+			System.err.println("Create Server Socket failed");
+			System.exit(-1);
+		}
+		
+		if (serverMode==MODE.PRIMARY) {
+			try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(primaryRecordPath.toString(),true)))) {
+				out.println("Primary Server:\n");
+				out.println(ip.toString()+"\n");
+				out.println(port);
+			}catch (Exception e) {
+				System.err.println("Fail to write to primary.txt");
+				System.exit(-1);
+			}
+		}
+		
 		
 		while(true){
 			Socket DFSSocket=socket.accept();
 			BufferedReader inFromClient =
 		               new BufferedReader(new InputStreamReader(DFSSocket.getInputStream()));
+
 			try {
 				RequestMessage request=new RequestMessage(inFromClient);
 				(new Thread(new DFS(request,fileSystemPath,DFSSocket))).start();
