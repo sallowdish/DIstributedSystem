@@ -34,6 +34,11 @@ public class RequestMessage {
 		}
 	}
 	
+	public RequestMessage(String header,String data){
+		this.header=new RequestHeader(header);
+		this.data=data;
+	}
+	
 	public static RequestMessage SYNCRequestMessage(String secondaryIP,Integer secondaryPort){
 		RequestMessage SYNCRequest=new RequestMessage();
 		SYNCRequest.header.method=RequestHeader.MethodType.SYNC;
@@ -43,6 +48,6 @@ public class RequestMessage {
 	
 	public String toString(){
 		header.contentLength=data.length();
-		return (header.toString()+data);
+		return (header.toString()+data+"\r\n");
 	}
 }

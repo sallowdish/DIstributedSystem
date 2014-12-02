@@ -52,7 +52,7 @@ public class ResponseMessage {
 	
 	public String toString(){
 		header.contentLength=body.length();
-		return (header.toString()+body);
+		return (header.toString()+body+"\r\n");
 	}
 	
 	public static ResponseMessage renderReponseMessage(BufferedReader buf){

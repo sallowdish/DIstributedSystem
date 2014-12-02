@@ -18,7 +18,7 @@ public class RequestHeader {
 	}
 	
 	public RequestHeader(String str){
-		
+		this();
 		try {
 			String[] info=str.split(" ");
 			method=MethodType.valueOf(info[0]);
