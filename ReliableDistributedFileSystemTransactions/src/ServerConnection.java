@@ -1,6 +1,3 @@
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 
 public class ServerConnection {
@@ -8,8 +5,6 @@ public class ServerConnection {
 	private static Integer primaryPort=-1;
 	private static String secondaryIP="";
 	private static Integer secondaryPort=-1;
-	public static SocketAddress primaryServer=null;
-	public static SocketAddress secondaryServer=null;
 	
 	public ServerConnection(String primaryIP, Integer primaryPort, String secondaryIP,Integer secondaryPort){
 		setPrimaryIP(primaryIP);
@@ -18,32 +13,34 @@ public class ServerConnection {
 		setSecondaryPort(secondaryPort);
 	}
 	
-	public SocketAddress updatePrimaryServerSocketAddress(){
+	
+	
+	public static boolean updatePrimaryServerSocketAddress(String info){
 		try {
-			primaryServer=new InetSocketAddress(InetAddress.getByName(primaryIP),primaryPort);
+			String[] lst=info.split(":");
+			primaryIP=lst[0];
+			primaryPort=Integer.valueOf(lst[1]);
+			return true;
 		} catch (Exception e) {
 			// DONE: handle exception
-			System.err.println("Fail to update primary server socketaddress");
-			primaryServer=null;
+			System.err.println("Fail to update primary server info");
+			return false;
 		}
-		return primaryServer;
 	}
 
-	public SocketAddress updateSecondServerSocketAddress(){
+	public static boolean updateSecondaryServerSocketAddress(String info){
 		try {
-			secondaryServer=new InetSocketAddress(InetAddress.getByName(secondaryIP),secondaryPort);
+			String[] lst=info.split(":");
+			secondaryIP=lst[0];
+			secondaryPort=Integer.valueOf(lst[1]);
+			return true;
 		} catch (Exception e) {
 			// DONE: handle exception
-			System.err.println("Fail to update secondary server socketaddress");
-			secondaryServer=null;
+			System.err.println("Fail to update secondary server info");
+			return false;
 		}
-		return secondaryServer;
 	}
-	
-	public void updateServerSocketAddress(){
-		updatePrimaryServerSocketAddress();
-		updateSecondServerSocketAddress();
-	}
+
 	
 	public static String getPrimaryIP() {
 		return primaryIP;
