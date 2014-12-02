@@ -44,7 +44,7 @@ public class RDFSTServer {
 					primaryRecordPath = Paths.get(System.getProperty("user.home") + primaryRecordPath.toString().substring(1));
 				}
 				ip=cmd.getOptionValue("ip", "127.0.0.1");
-				port=Integer.parseInt(cmd.getOptionValue("port","8080"));
+				port=Integer.valueOf(cmd.getOptionValue("port","8080"));
 				serverMode=cmd.hasOption("p")?MODE.PRIMARY:MODE.SECONDARY;
 			} catch (Exception e) {
 				System.err.println("Invalid Input");
@@ -55,6 +55,7 @@ public class RDFSTServer {
 		try {
 			socket =new ServerSocket(port,MAX_CONNECTION,InetAddress.getByName(ip));
 		} catch (Exception e) {
+			e.printStackTrace();
 			System.err.println("Create Server Socket failed");
 			System.exit(-1);
 		}
@@ -96,6 +97,7 @@ public class RDFSTServer {
 			//Send SYNC notification
 			try{
 				Socket test=new Socket(primaryIP,primaryPort);
+				test.setKeepAlive(true);
 				(new DataOutputStream(test.getOutputStream())).writeBytes(RequestMessage.SYNCRequestMessage(ip, port).toString());
 			} catch (Exception e) {
 				// DONE: handle exception
@@ -105,9 +107,8 @@ public class RDFSTServer {
 			//Update Server Connection
 			ServerConnection.setPrimaryIP(primaryIP);
 			ServerConnection.setPrimaryPort(primaryPort);
+			System.out.println("Setup socket to Primary Serve at "+primaryIP+":"+primaryPort);
 		}
-		
-		
 		
 		while(true){
 			Socket DFSSocket=socket.accept();
