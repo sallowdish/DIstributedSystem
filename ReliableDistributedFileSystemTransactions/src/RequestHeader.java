@@ -2,7 +2,7 @@
 
 public class RequestHeader {
 	//enum
-	public static enum MethodType{READ, NEW_TXN, WRITE,COMMIT,ABORT};
+	public static enum MethodType{READ, NEW_TXN, WRITE,COMMIT,ABORT,SYNC};
 
 	
 	//fields
@@ -41,12 +41,21 @@ public class RequestHeader {
 				transactionID=Integer.parseInt(info[1]);
 				sequenceNum=Integer.parseInt(info[2]);
 				break;
-
+				
 			default:
 				break;
 			}
 		}
 		catch(Exception e){
+			throw e;
+		}
+	}
+	public String toString(){
+		try {
+			return method.name()+" "+transactionID+" "+sequenceNum+" "+contentLength+"\r\n\r\n";
+		} catch (Exception e) {
+			// DONE: handle exception
+			System.err.println(e.getLocalizedMessage());
 			throw e;
 		}
 	}
