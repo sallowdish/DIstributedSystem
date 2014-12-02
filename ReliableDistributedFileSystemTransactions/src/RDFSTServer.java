@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -28,6 +29,7 @@ public class RDFSTServer {
 		
 	public static void main(String[] args) throws Exception{
 //		ServerSocket socket;
+		
 		CLI scanner=new CLI(args);
 		
 		if(scanner.parse()){
@@ -75,31 +77,41 @@ public class RDFSTServer {
 			ServerConnection.setPrimaryPort(port);
 		}else{
 //			DONE: Read primary.txt
-//			DONE: Update Server Connection
-//			TODO: Test Reachability
-//			TODO: Send notification
+//			DONE: Test Reachability
+//			DONE: Send notification
+//			DONE: Update Server Connection			
+			String primaryIP="";
+			Integer primaryPort=-1;
 			try(BufferedReader in=new BufferedReader(new FileReader(primaryRecordPath.toString()))){
 //				Read primary.txt
 				in.readLine();
 				String[] lst=in.readLine().split(":");
-//				Update Server Connection
-				ServerConnection.setPrimaryIP(lst[0]);
-				ServerConnection.setPrimaryPort(Integer.valueOf(lst[1]));
-				ServerConnection.setSecondaryIP(ip);
-				ServerConnection.setSecondaryPort(port);
+				primaryIP=lst[0];
+				primaryPort=Integer.valueOf(lst[1]);
 			}catch(Exception e){
 				System.err.println("Fail to read to primary.txt");
 				System.exit(-1);
 			}
+			//Test Reachability
+			//Send SYNC notification
+			try{
+				Socket test=new Socket(primaryIP,primaryPort);
+				(new DataOutputStream(test.getOutputStream())).writeBytes(RequestMessage.SYNCRequestMessage(ip, port).toString());
+			} catch (Exception e) {
+				// DONE: handle exception
+				System.err.println("Fail to setup socket with Primary Server");
+				System.exit(-1);
+			}
+			//Update Server Connection
+			ServerConnection.setPrimaryIP(primaryIP);
+			ServerConnection.setPrimaryPort(primaryPort);
 		}
 		
 		
 		
 		while(true){
 			Socket DFSSocket=socket.accept();
-			BufferedReader inFromClient =
-		               new BufferedReader(new InputStreamReader(DFSSocket.getInputStream()));
-
+			BufferedReader inFromClient = new BufferedReader(new InputStreamReader(DFSSocket.getInputStream()));
 			try {
 				RequestMessage request=new RequestMessage(inFromClient);
 				(new Thread(new DFS(request,fileSystemPath,DFSSocket))).start();
