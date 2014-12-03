@@ -31,6 +31,9 @@ public class ServerConnection {
 	public static boolean updateSecondaryServerSocketAddress(String info){
 		try {
 			String[] lst=info.split(":");
+			if (secondaryIP.equals(lst[0]) && secondaryPort.equals(Integer.valueOf(lst[1]))) {
+				return false;
+			}
 			secondaryIP=lst[0];
 			secondaryPort=Integer.valueOf(lst[1]);
 			return true;
