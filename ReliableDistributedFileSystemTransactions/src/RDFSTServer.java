@@ -149,7 +149,8 @@ public class RDFSTServer extends TimerTask{
 								if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
 //									System.out.println("Secondary Server is recorded.");
 								}
-							}else{
+							}
+							else{
 								(new Thread(new DFS(request,server.fileSystemPath,inSocket))).start();
 							}
 						} catch (Exception e) {

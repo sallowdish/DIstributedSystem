@@ -1,8 +1,10 @@
 
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -23,7 +25,7 @@ public class DFS implements Runnable{
 	public ResponseMessage response;
 	public static Path root=Paths.get(System.getProperty("user.dir"));
 	private Socket currentOpenSocket;
-	public static List<Integer> workingTrancationID=new ArrayList<Integer>(0);
+	public static Set<Integer> workingTrancationID=new HashSet<Integer>(0);
 	public static Set<Integer> commitedTrancationID=new HashSet<Integer>(0);
 	public static Map<Integer, Log> workingLog=new ConcurrentHashMap<Integer,Log>(0);
 	
@@ -32,10 +34,35 @@ public class DFS implements Runnable{
 			request=inRequest;
 			DFS.root=root;
 			currentOpenSocket=socket;
+			//read current commited TNX_id
+			File COMMITED_TNX_DB=new File(root.toFile(),".TNX_DB");
+			try(BufferedReader in=new BufferedReader(new FileReader(COMMITED_TNX_DB.getPath()))){
+////				in.readLine();
+				String nextLine=null;
+				while ((nextLine=in.readLine())!=null) {
+					String[] lst=nextLine.split(" ");
+					String tID=lst[0];
+					String filepath=lst[1];
+					commitedTrancationID.add(Integer.valueOf(tID));
+					workingTrancationID.add(Integer.valueOf(tID));
+					//create corresponding log
+					Log targetLog=workingLog.get(Integer.valueOf(tID));
+					if (targetLog==null) {
+						Log log=new Log(Integer.valueOf(tID),filepath);
+						log.base=Integer.valueOf(lst[2]);
+						log.sequenceNum=log.base;
+						workingLog.put(log.transcationID, log);
+					}
+				}
+				
+			}catch(Exception e){
+				e.printStackTrace();
+				System.err.println("Fail to read to TNX_DB");
+				System.exit(-1);
+			}
 	}
 	
 	public void run(){
-		
 		if (request!=null) {
 			switch (request.header.method) {
 			case READ:
@@ -131,7 +158,11 @@ public class DFS implements Runnable{
 				commitedTrancationID.add(request.header.transactionID);
 				File COMMITED_TNX_DB=new File(root.toFile(),".TNX_DB");
 				PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(COMMITED_TNX_DB.getPath(),false)));
-				out.println(commitedTrancationID.toString());
+				for (Integer tID : commitedTrancationID) {
+					Log co_log=workingLog.get(tID);
+					out.println(tID+" "+co_log.filepath+" "+co_log.base);
+				}
+//				out.println(commitedTrancationID.toString());
 				out.close();
 				
 				response=new ResponseMessage(request);
@@ -148,7 +179,7 @@ public class DFS implements Runnable{
 		if (workingTrancationID.contains(request.header.transactionID)) {
 			Log targetLog=workingLog.get(request.header.transactionID);
 			if (targetLog.sequenceNum!=request.header.sequenceNum-1) {
-				response=new ResponseMessage(202,request,"Invalid Sequence #");
+				response=new ResponseMessage(202,request,"Invalid Sequence #, current log at seq#"+targetLog.sequenceNum);
 			}else{
 				targetLog.writeToLog(request.data);
 				

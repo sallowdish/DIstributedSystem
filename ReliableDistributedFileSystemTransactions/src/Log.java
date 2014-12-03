@@ -24,11 +24,13 @@ public class Log {
 	
 	public boolean writeToDisk(int seq){
 		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(filepath,true)))) {
-			List<String> outBuffer=buffer.subList(base, seq);
+			List<String> outBuffer=buffer.subList(0, seq-base);
+			buffer=buffer.subList(seq-base, buffer.size());
 			for (String string : outBuffer) {
 				out.println(string+" ");
 				base++;
 			}
+			
 		    return true;
 		}catch (Exception e) {
 			System.err.println("Fail to write into disk");
