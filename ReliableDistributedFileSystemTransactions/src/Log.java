@@ -2,6 +2,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -38,4 +39,17 @@ public class Log {
 		}
 	}
 	
+	public String toString(){
+		return transcationID+""+sequenceNum+" "+filepath+" "+base+":"+buffer.toString();
+	}
+	
+	public Log(String requestBody) {
+		String[] lst=requestBody.split(":");
+		String[] header=lst[0].split(" ");
+		transcationID=Integer.valueOf(header[0]);
+		sequenceNum=Integer.valueOf(header[1]);
+		filepath=header[2];
+		base=Integer.valueOf(header[3]);
+		buffer=Arrays.asList(lst[1].split("\\s*,\\s*"));
+	}
 }
