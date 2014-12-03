@@ -59,6 +59,7 @@ public class RDFSTServer extends TimerTask{
 		System.out.println("ip:"+ip+"\nport:"+port+"\ndir:"+fileSystemPath+"\nshare:"+primaryRecordPath+"\nserverMode:"+serverMode);
 		try {
 			generalSocket =new ServerSocket(port,MAX_CONNECTION,InetAddress.getByName(ip));
+			generalSocket.setSoTimeout(10*1000);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Create Server Socket failed");
