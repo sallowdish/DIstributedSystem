@@ -8,6 +8,7 @@ import java.util.List;
 
 public class Log {
 	public static final String delimiter="~123456789";
+	public static final String EOF="~~9876~~";
 	public int transcationID=-1;
 	public int sequenceNum=0;
 	public String filepath="";
@@ -41,7 +42,11 @@ public class Log {
 	}
 	
 	public String toString(){
-		return transcationID+" "+sequenceNum+" "+filepath+" "+base+delimiter+buffer.toString();
+		String str=transcationID+" "+sequenceNum+" "+filepath+" "+base+delimiter;
+		for (String string : buffer) {
+			str=str+string+EOF;
+		}
+		return str;
 	}
 	
 	public Log(String requestBody) {
@@ -51,6 +56,6 @@ public class Log {
 		sequenceNum=Integer.valueOf(header[1]);
 		filepath=header[2];
 		base=Integer.valueOf(header[3]);
-		buffer=Arrays.asList(lst[1].substring(1, lst[1].length()-1).split("\\s*,\\s*"));
+		buffer=Arrays.asList(lst[1].split(EOF));
 	}
 }

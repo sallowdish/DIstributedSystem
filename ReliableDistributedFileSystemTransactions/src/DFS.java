@@ -135,9 +135,16 @@ public class DFS implements Runnable{
 		if (workingTrancationID.contains(request.header.transactionID)) {
 			Log targetLog=workingLog.get(request.header.transactionID);
 			
-			if (targetLog.sequenceNum<request.header.sequenceNum || targetLog.base>request.header.sequenceNum) {
+			if (//commit unreceiced seq
+					targetLog.sequenceNum<request.header.sequenceNum 
+					//commit commited seq
+					|| targetLog.base>request.header.sequenceNum) {
 				response=new ResponseMessage(202,request,"Invalid Sequence #. Current base is at:"+targetLog.base+" and head is at:"+targetLog.sequenceNum);
-			}else{
+			}
+			else if(targetLog.base==request.header.sequenceNum){
+				//check commit ACK only
+			}
+			else{
 				String syncLogString=targetLog.toString();
 				//Write data to dish
 				targetLog.writeToDisk(request.header.sequenceNum);
@@ -153,9 +160,10 @@ public class DFS implements Runnable{
 				out.close();
 
 				//TODO: send log to back-up
+				syncLogString=syncLogString+Log.delimiter+request.header.sequenceNum;
 				RequestMessage logRequest=RequestMessage.logRequestMessage(syncLogString);
-				try(Socket toSecondaryServerSocket=new Socket(ServerConnection.getSecondaryIP(),ServerConnection.getSecondaryPort());) {
-					
+				try {
+					Socket toSecondaryServerSocket=new Socket(ServerConnection.getSecondaryIP(),ServerConnection.getSecondaryPort());
 					DataOutputStream outSecondaryServer=new DataOutputStream(toSecondaryServerSocket.getOutputStream());
 					outSecondaryServer.writeBytes(logRequest.toString());
 					toSecondaryServerSocket.close();
@@ -164,12 +172,10 @@ public class DFS implements Runnable{
 					System.err.println(e.getLocalizedMessage());
 					System.err.println("Fail to sync secondary server.");
 				}
-				
-
-				response=new ResponseMessage(request);
-				response.header.method=ResponseHeader.MethodType.valueOf("ACK");
-				response.body="Write to local file :"+targetLog.filepath;
 			}
+			response=new ResponseMessage(request);
+			response.header.method=ResponseHeader.MethodType.valueOf("ACK");
+			response.body="Write to local file :"+targetLog.filepath;
 		}else{
 			response=new ResponseMessage(201, request," ");
 		}
@@ -255,9 +261,11 @@ public class DFS implements Runnable{
 		//TODO: commit tnx
 		//TODO: write to disk
 		Log syncLog=new Log(request.data);
+		Integer commitSeq=Integer.valueOf(request.data.split(Log.delimiter)[2]);
 		workingLog.put(syncLog.transcationID, syncLog);
 		workingTrancationID.add(syncLog.transcationID);
-//		syncLog.writeToDisk(??);
+		syncLog.writeToDisk(commitSeq);
+		commitedTrancationID.add(syncLog.transcationID);
 	}
 
 	private boolean RecoverFromDB(){
