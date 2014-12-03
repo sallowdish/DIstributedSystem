@@ -31,10 +31,12 @@ public class RDFSTServer extends TimerTask{
 	public Path primaryRecordPath;
 	private ServerSocket generalSocket;
 	private Timer timer;
+	private DFS fileSystem;
 
 	public RDFSTServer(){
 
 	}
+	
 	public RDFSTServer(String[] args){
 		CLI scanner=new CLI(args);
 		if(scanner.parse()){
@@ -63,6 +65,8 @@ public class RDFSTServer extends TimerTask{
 			System.err.println("Create Server Socket failed");
 			System.exit(-1);
 		}
+		
+		fileSystem=new DFS(fileSystemPath);
 
 		if (serverMode==MODE.PRIMARY) {
 			//			DONE: Write/Update primary.txt
@@ -121,6 +125,7 @@ public class RDFSTServer extends TimerTask{
 		}
 
 	}
+	
 	public static void main(String[] args) throws Exception{
 		//		ServerSocket socket;
 		RDFSTServer server=new RDFSTServer(args);
@@ -144,11 +149,16 @@ public class RDFSTServer extends TimerTask{
 								}
 							}
 							else{
-								(new Thread(new DFS(request,server.fileSystemPath,inSocket))).start();
+								server.fileSystem.request=request;
+								server.fileSystem.currentOpenSocket=inSocket;
+								(new Thread(server.fileSystem)).start();
 							}
 						} catch (Exception e) {
 							//TODO: RESEND response
-							(new Thread(new DFS(null,server.fileSystemPath,inSocket))).start();
+							server.fileSystem.request=null;
+							server.fileSystem.currentOpenSocket=inSocket;
+							(new Thread(server.fileSystem)).start();
+//							(new Thread(new DFS(null,server.fileSystemPath,inSocket))).start();
 						}
 					}
 					else{
@@ -159,11 +169,17 @@ public class RDFSTServer extends TimerTask{
 								// update serverConnection info
 
 							}else{
-								(new Thread(new DFS(request,server.fileSystemPath,inSocket))).start();
+//								(new Thread(new DFS(request,server.fileSystemPath,inSocket))).start();
+								server.fileSystem.request=request;
+								server.fileSystem.currentOpenSocket=inSocket;
+								(new Thread(server.fileSystem)).start();
 							}
 						} catch (Exception e) {
 							//TODO: RESEND response
-							(new Thread(new DFS(null,server.fileSystemPath,inSocket))).start();
+							server.fileSystem.request=null;
+							server.fileSystem.currentOpenSocket=inSocket;
+							(new Thread(server.fileSystem)).start();
+//							(new Thread(new DFS(null,server.fileSystemPath,inSocket))).start();
 						}
 					}
 				}

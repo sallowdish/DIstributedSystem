@@ -24,44 +24,28 @@ public class DFS implements Runnable{
 	public RequestMessage request;
 	public ResponseMessage response;
 	public static Path root=Paths.get(System.getProperty("user.dir"));
-	private Socket currentOpenSocket;
+	public Socket currentOpenSocket;
 	public static Set<Integer> workingTrancationID=new HashSet<Integer>(0);
 	public static Set<Integer> commitedTrancationID=new HashSet<Integer>(0);
 	public static Map<Integer, Log> workingLog=new ConcurrentHashMap<Integer,Log>(0);
-	
-	
-	public DFS(RequestMessage inRequest,Path root, Socket socket){
-			request=inRequest;
-			DFS.root=root;
-			currentOpenSocket=socket;
-			//read current commited TNX_id
-			File COMMITED_TNX_DB=new File(root.toFile(),".TNX_DB");
-			try(BufferedReader in=new BufferedReader(new FileReader(COMMITED_TNX_DB.getPath()))){
-////				in.readLine();
-				String nextLine=null;
-				while ((nextLine=in.readLine())!=null) {
-					String[] lst=nextLine.split(" ");
-					String tID=lst[0];
-					String filepath=lst[1];
-					commitedTrancationID.add(Integer.valueOf(tID));
-					workingTrancationID.add(Integer.valueOf(tID));
-					//create corresponding log
-					Log targetLog=workingLog.get(Integer.valueOf(tID));
-					if (targetLog==null) {
-						Log log=new Log(Integer.valueOf(tID),filepath);
-						log.base=Integer.valueOf(lst[2]);
-						log.sequenceNum=log.base;
-						workingLog.put(log.transcationID, log);
-					}
-				}
-				
-			}catch(Exception e){
-				e.printStackTrace();
-				System.err.println("Fail to read to TNX_DB");
-				System.exit(-1);
-			}
+
+
+
+	public DFS(Path root) {
+		DFS.root=root;
+		RecoverFromDB();
 	}
-	
+
+
+
+	public DFS(RequestMessage inRequest,Path root, Socket socket){
+		request=inRequest;
+		DFS.root=root;
+		currentOpenSocket=socket;
+		//read current commited TNX_id
+		RecoverFromDB();
+	}
+
 	public void run(){
 		if (request!=null) {
 			switch (request.header.method) {
@@ -72,17 +56,17 @@ public class DFS implements Runnable{
 					//  Auto-generated catch block
 					e.printStackTrace();
 					System.err.println("Fail to deal with READ request:"+e.getLocalizedMessage());
-//					System.exit(-1);
+					//					System.exit(-1);
 				}
 				break;
 			case NEW_TXN:
 				try {
 					handleNewTranscationRequest();
-					
+
 				} catch (Exception e) {
 					// : handle exception
 					System.err.println("Fail to deal with NEW_TNX request: "+e.getLocalizedMessage());
-//					System.exit(-1);
+					//					System.exit(-1);
 				}
 				break;
 			case WRITE:
@@ -121,39 +105,40 @@ public class DFS implements Runnable{
 				handleMessageFormatWrong();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-//				e.printStackTrace();
-				
+				//				e.printStackTrace();
+
 				System.err.println("Fail to deal with wrong formatted request, "+e.getLocalizedMessage());
 			}
 		}
-		
+
 	}
-	
+
 	private void handleAbortRequest() throws IOException{
 		if (workingTrancationID.contains(request.header.transactionID)) {
 			Log targetLog=workingLog.get(request.header.transactionID);
-				workingTrancationID.remove(Integer.valueOf(request.header.transactionID));
-				workingLog.remove(targetLog.transcationID);
-				
-				response=new ResponseMessage(request);
-				response.header.method=ResponseHeader.MethodType.valueOf("ACK");
-				response.body="Abort Transaction# :"+targetLog.transcationID;
+			workingTrancationID.remove(Integer.valueOf(request.header.transactionID));
+			workingLog.remove(targetLog.transcationID);
+
+			response=new ResponseMessage(request);
+			response.header.method=ResponseHeader.MethodType.valueOf("ACK");
+			response.body="Abort Transaction# :"+targetLog.transcationID;
 		}
 		else{
 			response=new ResponseMessage(201, request," ");
 		}
 		sendResponseMessage();
 	}
-	
+
 	private void handleCommitRequest() throws IOException {
 		if (workingTrancationID.contains(request.header.transactionID)) {
 			Log targetLog=workingLog.get(request.header.transactionID);
+			String syncLogString=targetLog.toString();
 			if (targetLog.sequenceNum<request.header.sequenceNum || targetLog.base>request.header.sequenceNum) {
 				response=new ResponseMessage(202,request,"Invalid Sequence #. Current base is at:"+targetLog.base+" and head is at:"+targetLog.sequenceNum);
 			}else{
 				//Write data to dish
 				targetLog.writeToDisk(request.header.sequenceNum);
-				
+
 				//record commited TNX
 				commitedTrancationID.add(request.header.transactionID);
 				File COMMITED_TNX_DB=new File(root.toFile(),".TNX_DB");
@@ -162,9 +147,11 @@ public class DFS implements Runnable{
 					Log co_log=workingLog.get(tID);
 					out.println(tID+" "+co_log.filepath+" "+co_log.base);
 				}
-//				out.println(commitedTrancationID.toString());
 				out.close();
-				
+
+				//TODO: send log to back-up
+				RequestMessage logRequest=RequestMessage.SYNCRequestMessage(syncLogString);
+
 				response=new ResponseMessage(request);
 				response.header.method=ResponseHeader.MethodType.valueOf("ACK");
 				response.body="Write to local file :"+targetLog.filepath;
@@ -174,7 +161,7 @@ public class DFS implements Runnable{
 		}
 		sendResponseMessage();
 	}
-	
+
 	private void handleWriteRequest() throws IOException{
 		if (workingTrancationID.contains(request.header.transactionID)) {
 			Log targetLog=workingLog.get(request.header.transactionID);
@@ -182,7 +169,7 @@ public class DFS implements Runnable{
 				response=new ResponseMessage(202,request,"Invalid Sequence #, current log at seq#"+targetLog.sequenceNum);
 			}else{
 				targetLog.writeToLog(request.data);
-				
+
 				response=new ResponseMessage(request);
 				response.header.method=ResponseHeader.MethodType.valueOf("ACK");
 				response.body=request.data;
@@ -192,12 +179,12 @@ public class DFS implements Runnable{
 		}
 		sendResponseMessage();
 	}
-	
+
 	private void handleMessageFormatWrong() throws IOException{
 		response=new ResponseMessage(ResponseHeader.Wrong_Message_Format,request,"can not parse request");
 		sendResponseMessage();
 	}
-	
+
 	private void handleReadRequest() throws IOException {
 		String[] content=getFileContent();
 		if (content!=null) {
@@ -205,7 +192,7 @@ public class DFS implements Runnable{
 		}
 		sendResponseMessage();
 	}
-	
+
 	private String[] getFileContent(){
 		String filename=request.data;
 		File f = new File(root.toFile(),filename);
@@ -224,12 +211,12 @@ public class DFS implements Runnable{
 			return null;
 		}
 	}
-	
+
 	private void sendResponseMessage() throws IOException  {
 		DataOutputStream outBuffer=new DataOutputStream(currentOpenSocket.getOutputStream());
 		String outString=response.toString()+"\r\n";
 		outBuffer.writeBytes(outString);
-//		currentOpenSocket.close();
+		//		currentOpenSocket.close();
 	}
 
 	private void handleNewTranscationRequest() throws Exception{
@@ -238,7 +225,7 @@ public class DFS implements Runnable{
 		while(workingTrancationID.contains(tID)){
 			tID=r.nextInt(1000);
 		}
-		
+
 		response=new ResponseMessage(request);
 		response.header.method=ResponseHeader.MethodType.valueOf("ACK");
 		response.header.transactionID=tID;
@@ -249,4 +236,34 @@ public class DFS implements Runnable{
 		sendResponseMessage();
 	}
 
+	private boolean RecoverFromDB(){
+		File COMMITED_TNX_DB=new File(root.toFile(),".TNX_DB");
+		if (COMMITED_TNX_DB.exists()) {
+			try(BufferedReader in=new BufferedReader(new FileReader(COMMITED_TNX_DB.getPath()))){
+				////			in.readLine();
+				String nextLine=null;
+				while ((nextLine=in.readLine())!=null) {
+					String[] lst=nextLine.split(" ");
+					String tID=lst[0];
+					String filepath=lst[1];
+					commitedTrancationID.add(Integer.valueOf(tID));
+					workingTrancationID.add(Integer.valueOf(tID));
+					//create corresponding log
+					Log targetLog=workingLog.get(Integer.valueOf(tID));
+					if (targetLog==null) {
+						Log log=new Log(Integer.valueOf(tID),filepath);
+						log.base=Integer.valueOf(lst[2]);
+						log.sequenceNum=log.base;
+						workingLog.put(log.transcationID, log);
+					}
+				}
+				return true;
+			}catch(Exception e){
+				e.printStackTrace();
+				System.err.println("Fail to read to TNX_DB");
+				System.exit(-1);
+			}
+		}
+		return false;
+	}
 }
