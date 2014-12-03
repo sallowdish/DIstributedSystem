@@ -4,7 +4,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -13,7 +12,6 @@ import java.net.Socket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -23,7 +21,7 @@ import org.apache.commons.cli.CommandLine;
 public class RDFSTServer extends TimerTask{
 	static enum MODE {PRIMARY,SECONDARY};
 	static final int MAX_CONNECTION=10;
-	static final int REACHABILITY_CHECK_PEROID=5000;
+	static final int REACHABILITY_CHECK_PEROID=3000;
 	public Path fileSystemPath;
 	public String ip="127.0.0.1";
 	public int port=8080;
@@ -36,7 +34,7 @@ public class RDFSTServer extends TimerTask{
 	public RDFSTServer(){
 
 	}
-	
+
 	public RDFSTServer(String[] args){
 		CLI scanner=new CLI(args);
 		if(scanner.parse()){
@@ -65,7 +63,7 @@ public class RDFSTServer extends TimerTask{
 			System.err.println("Create Server Socket failed");
 			System.exit(-1);
 		}
-		
+
 		fileSystem=new DFS(fileSystemPath);
 
 		if (serverMode==MODE.PRIMARY) {
@@ -84,8 +82,8 @@ public class RDFSTServer extends TimerTask{
 			//	add primary server info to ServerConnection
 			ServerConnection.setPrimaryIP(ip);
 			ServerConnection.setPrimaryPort(port);
-//			timer=new Timer();
-//			timer.schedule(this, 0, REACHABILITY_CHECK_PEROID);
+			//			timer=new Timer();
+			//			timer.schedule(this, 0, REACHABILITY_CHECK_PEROID);
 		}else{
 			//			DONE: Read primary.txt
 			//			DONE: Test Reachability
@@ -109,9 +107,11 @@ public class RDFSTServer extends TimerTask{
 				Socket testSocket=new Socket(primaryIP,primaryPort);
 				testSocket.setKeepAlive(true);
 				if(!isSocketConnected(testSocket)){
+					testSocket.close();
 					throw new Exception();
 				}
 				else{
+					testSocket.close();
 					System.out.println("Setup socket to Primary Serve at "+primaryIP+":"+primaryPort);
 					//start timer
 					timer=new Timer(true);
@@ -125,7 +125,7 @@ public class RDFSTServer extends TimerTask{
 		}
 
 	}
-	
+
 	public static void main(String[] args) throws Exception{
 		//		ServerSocket socket;
 		RDFSTServer server=new RDFSTServer(args);
@@ -141,16 +141,18 @@ public class RDFSTServer extends TimerTask{
 					data=in.readLine();
 					if (server.serverMode==MODE.PRIMARY) {
 						try {
-							RequestMessage request=new RequestMessage(header,data);
-							if (request.header.method==RequestHeader.MethodType.SYNC) {
-								if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
-									System.out.println("Secondary Server is recorded.");
+							if (header!=null && data!=null) {
+								RequestMessage request=new RequestMessage(header,data);
+								if (request.header.method==RequestHeader.MethodType.PING) {
+									if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
+										System.out.println("Secondary Server is recorded.");
+									}
 								}
-							}
-							else{
-								server.fileSystem.request=request;
-								server.fileSystem.currentOpenSocket=inSocket;
-								(new Thread(server.fileSystem)).start();
+								else{
+									server.fileSystem.request=request;
+									server.fileSystem.currentOpenSocket=inSocket;
+									(new Thread(server.fileSystem)).start();
+								}
 							}
 						} catch (Exception e) {
 							//TODO: RESEND response
@@ -162,23 +164,25 @@ public class RDFSTServer extends TimerTask{
 					else{
 						//Secondary Server behaviors on request
 						try {
-							RequestMessage request=new RequestMessage(header,data);
-							if (request.header.method==RequestHeader.MethodType.SYNC) {
-								System.out.println("SYNC request from "+request.data);
-								// update serverConnection info
+							if (header!=null && data!=null) {
+								RequestMessage request=new RequestMessage(header,data);
+								if (request.header.method==RequestHeader.MethodType.SYNC) {
+									System.out.println("SYNC request from "+request.data);
+									// update serverConnection info
 
-							}else{
-//								(new Thread(new DFS(request,server.fileSystemPath,inSocket))).start();
-								server.fileSystem.request=request;
-								server.fileSystem.currentOpenSocket=inSocket;
-								(new Thread(server.fileSystem)).start();
+								}else{
+									//								(new Thread(new DFS(request,server.fileSystemPath,inSocket))).start();
+									server.fileSystem.request=request;
+									server.fileSystem.currentOpenSocket=inSocket;
+									(new Thread(server.fileSystem)).start();
+								}
 							}
 						} catch (Exception e) {
 							//TODO: RESEND response
 							server.fileSystem.request=null;
 							server.fileSystem.currentOpenSocket=inSocket;
 							(new Thread(server.fileSystem)).start();
-//							(new Thread(new DFS(null,server.fileSystemPath,inSocket))).start();
+							//							(new Thread(new DFS(null,server.fileSystemPath,inSocket))).start();
 						}
 					}
 				}
@@ -193,20 +197,21 @@ public class RDFSTServer extends TimerTask{
 	private boolean isSocketConnected(Socket socket){
 		try {
 			DataOutputStream testOut=new DataOutputStream(socket.getOutputStream());
-			testOut.writeBytes(RequestMessage.SYNCRequestMessage(ip, port).toString());
+			testOut.writeBytes(RequestMessage.PingRequestMessage(ip+":"+port).toString());
 			//Update Server Connection
 			ServerConnection.setPrimaryIP(socket.getInetAddress().toString().substring(1));
 			ServerConnection.setPrimaryPort(socket.getPort());
-			socket.close();
+//			socket.close();
 			return true;
 		} catch (Exception e) {
 			// DONE: handle exception
-//			e.printStackTrace();
-			System.err.println("The socket between servers is closed.");
+			//			e.printStackTrace();
+			System.err.println(e.getLocalizedMessage()+"The socket between servers is closed.");
 			return false;
 		}
 
 	}
+	
 
 	@Override
 	public void run() {
@@ -214,14 +219,14 @@ public class RDFSTServer extends TimerTask{
 		if(serverMode==MODE.PRIMARY){
 
 		}else{
-			try {
-				Socket toPrimaryServer=new Socket(ServerConnection.getPrimaryIP(),ServerConnection.getPrimaryPort());
+			try(Socket toPrimaryServer=new Socket(ServerConnection.getPrimaryIP(),ServerConnection.getPrimaryPort());) {
+
 				if (!isSocketConnected(toPrimaryServer)) {
 					throw new Exception();
 				}else{
 					System.out.println(new Date()+": Socket to Primary Server is up.");
 				}
-//				toPrimaryServer.close();
+				toPrimaryServer.close();
 			} catch (Exception e) {
 				// TODO: handle exception
 				System.err.println(new Date()+": Primary Server has crashed.");

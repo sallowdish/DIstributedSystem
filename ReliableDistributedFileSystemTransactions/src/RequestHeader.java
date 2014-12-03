@@ -2,7 +2,7 @@
 
 public class RequestHeader {
 	//enum
-	public static enum MethodType{READ, NEW_TXN, WRITE,COMMIT,ABORT,SYNC};
+	public static enum MethodType{READ, NEW_TXN, WRITE,COMMIT,ABORT,SYNC,PING,LOG};
 
 	
 	//fields
@@ -15,6 +15,11 @@ public class RequestHeader {
 		transactionID=-1;
 		sequenceNum=-1;
 		contentLength=-1;
+	}
+	
+	public RequestHeader(MethodType method){
+		this();
+		this.method=method;
 	}
 	
 	public RequestHeader(String str){

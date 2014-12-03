@@ -12,9 +12,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -104,9 +102,6 @@ public class DFS implements Runnable{
 			try {
 				handleMessageFormatWrong();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				//				e.printStackTrace();
-
 				System.err.println("Fail to deal with wrong formatted request, "+e.getLocalizedMessage());
 			}
 		}
@@ -151,8 +146,8 @@ public class DFS implements Runnable{
 
 				//TODO: send log to back-up
 				RequestMessage logRequest=RequestMessage.SYNCRequestMessage(syncLogString);
-				try {
-					Socket toSecondaryServerSocket=new Socket(ServerConnection.getSecondaryIP(),ServerConnection.getSecondaryPort());
+				try(Socket toSecondaryServerSocket=new Socket(ServerConnection.getSecondaryIP(),ServerConnection.getSecondaryPort());) {
+					
 					DataOutputStream outSecondaryServer=new DataOutputStream(toSecondaryServerSocket.getOutputStream());
 					outSecondaryServer.writeBytes(logRequest.toString());
 					toSecondaryServerSocket.close();

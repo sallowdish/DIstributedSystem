@@ -3,6 +3,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 
+
 public class RequestMessage {
 	public RequestHeader header;
 	public String data;
@@ -10,6 +11,11 @@ public class RequestMessage {
 	public RequestMessage(){
 		header=new RequestHeader();
 		data=null;
+	}
+	
+	public RequestMessage(RequestHeader.MethodType method){
+		header=new RequestHeader(method);
+		data="";
 	}
 	
 	public RequestMessage(BufferedReader buf) throws Exception{
@@ -48,8 +54,19 @@ public class RequestMessage {
 	
 	public static RequestMessage SYNCRequestMessage(String body){
 		RequestMessage SYNCRequest=new RequestMessage();
+		SYNCRequest.header.method=RequestHeader.MethodType.SYNC;
 		SYNCRequest.data=body;
 		return SYNCRequest;
+	}
+	
+	public static RequestMessage PingRequestMessage() {
+		return new RequestMessage(RequestHeader.MethodType.PING); 
+	}
+	
+	public static RequestMessage PingRequestMessage(String body) {
+		RequestMessage ping=PingRequestMessage();
+		ping.data=body;
+		return ping;
 	}
 	
 	public String toString(){
