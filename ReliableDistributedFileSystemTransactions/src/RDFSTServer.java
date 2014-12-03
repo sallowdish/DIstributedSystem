@@ -69,20 +69,43 @@ public class RDFSTServer extends TimerTask{
 		if (serverMode==MODE.PRIMARY) {
 			//			DONE: Write/Update primary.txt
 			//			DONE: Update Server Connection
-			//			DONE: Wait 4 Secondary notification 
-			try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(primaryRecordPath.toString(),false)))) {
-				out.flush();
-				out.println("Primary Server:");
-				out.println(ip.toString()+":"+port);
-				out.close();
-			}catch (Exception e) {
-				System.err.println("Fail to write to primary.txt");
+			//			DONE: Wait 4 Secondary notification
+			String primaryIP="";
+			Integer primaryPort=-1;
+			try(BufferedReader in=new BufferedReader(new FileReader(primaryRecordPath.toString()))){
+				//				Read primary.txt
+				in.readLine();
+				String[] lst=in.readLine().split(":");
+				primaryIP=lst[0];
+				primaryPort=Integer.valueOf(lst[1]);
+			}catch(Exception e){
+				System.err.println("Fail to read to primary.txt");
 				System.exit(-1);
 			}
-			//	add primary server info to ServerConnection
-			ServerConnection.setPrimaryIP(ip);
-			ServerConnection.setPrimaryPort(port);
+			try(Socket preSocket=new Socket(primaryIP,primaryPort)) {
+				if (primaryIP.equals(ip) && primaryPort.equals(port)) {
+					throw new Exception();
+				}
+				DataOutputStream outPreSocket=new DataOutputStream(preSocket.getOutputStream());
+				outPreSocket.writeBytes((RequestMessage.PingRequestMessage()).toString());
+				preSocket.close();
+				System.err.println("Primary Server already exsist.");
+				System.exit(-1);
+			} catch (Exception e) {
+				try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(primaryRecordPath.toString(),false)))) {
+					out.flush();
+					out.println("Primary Server:");
+					out.println(ip.toString()+":"+port);
+					out.close();
+				}catch (Exception e1) {
+					System.err.println("Fail to write to primary.txt");
+					System.exit(-1);
+				}
+				//	add primary server info to ServerConnection
+				ServerConnection.setPrimaryIP(ip);
+				ServerConnection.setPrimaryPort(port);
 
+			}
 		}
 		else{
 			//			DONE: Read primary.txt
