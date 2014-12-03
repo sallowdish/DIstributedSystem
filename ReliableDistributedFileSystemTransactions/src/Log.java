@@ -7,6 +7,7 @@ import java.util.List;
 
 
 public class Log {
+	public static final String delimiter="$%^%$%^";
 	public int transcationID=-1;
 	public int sequenceNum=0;
 	public String filepath="";
@@ -40,11 +41,11 @@ public class Log {
 	}
 	
 	public String toString(){
-		return transcationID+""+sequenceNum+" "+filepath+" "+base+":"+buffer.toString();
+		return transcationID+""+sequenceNum+" "+filepath+" "+base+delimiter+buffer.toString();
 	}
 	
 	public Log(String requestBody) {
-		String[] lst=requestBody.split(":");
+		String[] lst=requestBody.split(delimiter);
 		String[] header=lst[0].split(" ");
 		transcationID=Integer.valueOf(header[0]);
 		sequenceNum=Integer.valueOf(header[1]);
