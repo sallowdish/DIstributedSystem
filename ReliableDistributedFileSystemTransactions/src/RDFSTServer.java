@@ -193,12 +193,21 @@ public class RDFSTServer extends TimerTask{
 								RequestMessage request=new RequestMessage(header,data);
 								if (request.header.method==RequestHeader.MethodType.LOG) {
 									System.out.println("LOG request from "+request.data);
-									// update serverConnection info
-
-								}else{
+									// TODO:update serverConnection info
 									server.fileSystem.request=request;
 									server.fileSystem.currentOpenSocket=inSocket;
 									(new Thread(server.fileSystem)).start();
+								}else{
+									//TODO: forbid other request
+									System.err.println("Unexpected request");
+									//reply error response
+									try {
+										DataOutputStream outInSocket=new DataOutputStream(inSocket.getOutputStream());
+										outInSocket.writeBytes((new ResponseMessage(ResponseHeader.Invalid_Operation,request,"connection to secondary server is forbiden.")).toString());
+									} catch (Exception e) {
+										// DONE: handle exception
+										System.err.println("Failed to send Error response to Client. "+e.getLocalizedMessage());
+									}
 								}
 							}
 						} catch (Exception e) {
