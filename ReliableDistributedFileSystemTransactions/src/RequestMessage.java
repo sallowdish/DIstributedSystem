@@ -45,16 +45,16 @@ public class RequestMessage {
 		this.data=data;
 	}
 	
-	public static RequestMessage SYNCRequestMessage(String secondaryIP,Integer secondaryPort){
+	public static RequestMessage logRequestMessage(String secondaryIP,Integer secondaryPort){
 		RequestMessage SYNCRequest=new RequestMessage();
-		SYNCRequest.header.method=RequestHeader.MethodType.SYNC;
+		SYNCRequest.header.method=RequestHeader.MethodType.LOG;
 		SYNCRequest.data=secondaryIP+":"+secondaryPort;
 		return SYNCRequest;
 	}
 	
-	public static RequestMessage SYNCRequestMessage(String body){
+	public static RequestMessage logRequestMessage(String body){
 		RequestMessage SYNCRequest=new RequestMessage();
-		SYNCRequest.header.method=RequestHeader.MethodType.SYNC;
+		SYNCRequest.header.method=RequestHeader.MethodType.LOG;
 		SYNCRequest.data=body;
 		return SYNCRequest;
 	}

@@ -64,7 +64,7 @@ public class RDFSTServer extends TimerTask{
 			System.exit(-1);
 		}
 
-		fileSystem=new DFS(fileSystemPath);
+
 
 		if (serverMode==MODE.PRIMARY) {
 			//			DONE: Write/Update primary.txt
@@ -74,7 +74,7 @@ public class RDFSTServer extends TimerTask{
 				out.flush();
 				out.println("Primary Server:");
 				out.println(ip.toString()+":"+port);
-				//				out.close();
+				out.close();
 			}catch (Exception e) {
 				System.err.println("Fail to write to primary.txt");
 				System.exit(-1);
@@ -82,9 +82,9 @@ public class RDFSTServer extends TimerTask{
 			//	add primary server info to ServerConnection
 			ServerConnection.setPrimaryIP(ip);
 			ServerConnection.setPrimaryPort(port);
-			//			timer=new Timer();
-			//			timer.schedule(this, 0, REACHABILITY_CHECK_PEROID);
-		}else{
+
+		}
+		else{
 			//			DONE: Read primary.txt
 			//			DONE: Test Reachability
 			//			DONE: Send notification
@@ -124,6 +124,8 @@ public class RDFSTServer extends TimerTask{
 			}
 		}
 
+		//set up DFS
+		fileSystem=new DFS(fileSystemPath);
 	}
 
 	public static void main(String[] args) throws Exception{
@@ -166,12 +168,11 @@ public class RDFSTServer extends TimerTask{
 						try {
 							if (header!=null && data!=null) {
 								RequestMessage request=new RequestMessage(header,data);
-								if (request.header.method==RequestHeader.MethodType.SYNC) {
-									System.out.println("SYNC request from "+request.data);
+								if (request.header.method==RequestHeader.MethodType.LOG) {
+									System.out.println("LOG request from "+request.data);
 									// update serverConnection info
 
 								}else{
-									//								(new Thread(new DFS(request,server.fileSystemPath,inSocket))).start();
 									server.fileSystem.request=request;
 									server.fileSystem.currentOpenSocket=inSocket;
 									(new Thread(server.fileSystem)).start();
@@ -212,6 +213,25 @@ public class RDFSTServer extends TimerTask{
 
 	}
 	
+	private boolean updatePrimaryFile() {
+		try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(primaryRecordPath.toString(),false)))) {
+			out.flush();
+			out.println("Primary Server:");
+			out.println(ip.toString()+":"+port);
+			out.close();
+			ServerConnection.setPrimaryIP(ip);
+			ServerConnection.setPrimaryPort(port);
+			ServerConnection.setSecondaryIP("");
+			ServerConnection.setPrimaryPort(-1);
+			return true;
+		}catch (Exception e) {
+			System.err.println("Fail to modify to primary.txt");
+			System.exit(-1);
+			return false;
+		}
+		//	add primary server info to ServerConnection	
+	}
+	
 
 	@Override
 	public void run() {
@@ -231,7 +251,9 @@ public class RDFSTServer extends TimerTask{
 				// TODO: handle exception
 				System.err.println(new Date()+": Primary Server has crashed.");
 				timer.cancel();
-				System.exit(-1);
+				serverMode=MODE.PRIMARY;
+				updatePrimaryFile();
+//				System.exit(-1);
 			}
 		}
 	}

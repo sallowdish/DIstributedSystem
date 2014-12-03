@@ -145,7 +145,7 @@ public class DFS implements Runnable{
 				out.close();
 
 				//TODO: send log to back-up
-				RequestMessage logRequest=RequestMessage.SYNCRequestMessage(syncLogString);
+				RequestMessage logRequest=RequestMessage.logRequestMessage(syncLogString);
 				try(Socket toSecondaryServerSocket=new Socket(ServerConnection.getSecondaryIP(),ServerConnection.getSecondaryPort());) {
 					
 					DataOutputStream outSecondaryServer=new DataOutputStream(toSecondaryServerSocket.getOutputStream());
