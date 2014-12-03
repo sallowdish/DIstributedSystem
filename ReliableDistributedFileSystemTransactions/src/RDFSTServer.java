@@ -30,6 +30,7 @@ public class RDFSTServer extends TimerTask{
 	private ServerSocket generalSocket;
 	private Timer timer;
 	private DFS fileSystem;
+	private int failCounter=0;
 
 	public RDFSTServer(){
 
@@ -168,6 +169,7 @@ public class RDFSTServer extends TimerTask{
 									if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
 										System.out.println("Secondary Server is recorded.");
 									}
+//									inSocket.close();
 								}
 								else{
 									server.fileSystem.request=request;
@@ -275,13 +277,16 @@ public class RDFSTServer extends TimerTask{
 					System.out.println(new Date()+": Socket to Primary Server is up.");
 				}
 				toPrimaryServer.close();
+				failCounter=0;
 			} catch (Exception e) {
 				// TODO: handle exception
-				System.err.println(new Date()+": Primary Server has crashed.");
-				timer.cancel();
-				serverMode=MODE.PRIMARY;
-				updatePrimaryFile();
-//				System.exit(-1);
+				failCounter++;
+				if (failCounter>2) {
+					System.err.println(new Date()+": Primary Server has crashed.");
+					timer.cancel();
+					serverMode=MODE.PRIMARY;
+					updatePrimaryFile();
+				}
 			}
 		}
 	}
