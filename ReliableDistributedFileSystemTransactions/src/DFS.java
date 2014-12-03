@@ -134,10 +134,11 @@ public class DFS implements Runnable{
 	private void handleCommitRequest() throws IOException {
 		if (workingTrancationID.contains(request.header.transactionID)) {
 			Log targetLog=workingLog.get(request.header.transactionID);
-			String syncLogString=targetLog.toString();
+			
 			if (targetLog.sequenceNum<request.header.sequenceNum || targetLog.base>request.header.sequenceNum) {
 				response=new ResponseMessage(202,request,"Invalid Sequence #. Current base is at:"+targetLog.base+" and head is at:"+targetLog.sequenceNum);
 			}else{
+				String syncLogString=targetLog.toString();
 				//Write data to dish
 				targetLog.writeToDisk(request.header.sequenceNum);
 
