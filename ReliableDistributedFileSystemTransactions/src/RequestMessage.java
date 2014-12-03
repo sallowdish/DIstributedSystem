@@ -46,6 +46,12 @@ public class RequestMessage {
 		return SYNCRequest;
 	}
 	
+	public static RequestMessage SYNCRequestMessage(String body){
+		RequestMessage SYNCRequest=new RequestMessage();
+		SYNCRequest.data=body;
+		return SYNCRequest;
+	}
+	
 	public String toString(){
 		header.contentLength=data.length();
 		return (header.toString()+data+"\r\n");
