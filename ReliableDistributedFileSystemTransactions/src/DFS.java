@@ -151,6 +151,17 @@ public class DFS implements Runnable{
 
 				//TODO: send log to back-up
 				RequestMessage logRequest=RequestMessage.SYNCRequestMessage(syncLogString);
+				try {
+					Socket toSecondaryServerSocket=new Socket(ServerConnection.getSecondaryIP(),ServerConnection.getSecondaryPort());
+					DataOutputStream outSecondaryServer=new DataOutputStream(toSecondaryServerSocket.getOutputStream());
+					outSecondaryServer.writeBytes(logRequest.toString());
+					toSecondaryServerSocket.close();
+				} catch (Exception e) {
+					// TODO: handle exception
+					System.err.println(e.getLocalizedMessage());
+					System.err.println("Fail to sync secondary server.");
+				}
+				
 
 				response=new ResponseMessage(request);
 				response.header.method=ResponseHeader.MethodType.valueOf("ACK");
