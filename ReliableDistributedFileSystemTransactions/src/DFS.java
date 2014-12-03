@@ -91,7 +91,14 @@ public class DFS implements Runnable{
 					System.err.println("Fail to deal with Abort request: "+e.getLocalizedMessage());
 				}
 				break;
-
+			case LOG:
+				try{
+					handleLogRequest();
+				}
+				catch (Exception e) {
+					// : handle exception
+					System.err.println("Fail to deal with Log request: "+e.getLocalizedMessage());
+				}
 			default:
 				break;
 			}
@@ -240,6 +247,16 @@ public class DFS implements Runnable{
 		workingLog.putIfAbsent(tID, newLog);
 		response.body="New Transcation:"+tID+"@"+newLog.filepath+" has initialized.";
 		sendResponseMessage();
+	}
+	private void handleLogRequest(){
+		//TODO: recover log
+		//TODO: add tnx
+		//TODO: commit tnx
+		//TODO: write to disk
+		Log syncLog=new Log(request.data);
+		workingLog.put(syncLog.transcationID, syncLog);
+		workingTrancationID.add(syncLog.transcationID);
+//		syncLog.writeToDisk(??);
 	}
 
 	private boolean RecoverFromDB(){
