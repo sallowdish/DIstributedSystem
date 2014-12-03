@@ -78,14 +78,10 @@ public class RDFSTServer extends TimerTask{
 				String[] lst=in.readLine().split(":");
 				primaryIP=lst[0];
 				primaryPort=Integer.valueOf(lst[1]);
-			}catch(Exception e){
-				System.err.println("Fail to read to primary.txt");
-				System.exit(-1);
-			}
-			try(Socket preSocket=new Socket(primaryIP,primaryPort)) {
 				if (primaryIP.equals(ip) && primaryPort.equals(port)) {
 					throw new Exception();
 				}
+				Socket preSocket=new Socket(primaryIP,primaryPort);
 				DataOutputStream outPreSocket=new DataOutputStream(preSocket.getOutputStream());
 				outPreSocket.writeBytes((RequestMessage.PingRequestMessage()).toString());
 				preSocket.close();
