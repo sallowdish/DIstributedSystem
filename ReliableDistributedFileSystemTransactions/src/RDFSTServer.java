@@ -143,9 +143,8 @@ public class RDFSTServer extends TimerTask{
 						try {
 							RequestMessage request=new RequestMessage(header,data);
 							if (request.header.method==RequestHeader.MethodType.SYNC) {
-								// update serverConnection info
 								if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
-//									System.out.println("Secondary Server is recorded.");
+									System.out.println("Secondary Server is recorded.");
 								}
 							}
 							else{
@@ -158,10 +157,10 @@ public class RDFSTServer extends TimerTask{
 							server.fileSystem.request=null;
 							server.fileSystem.currentOpenSocket=inSocket;
 							(new Thread(server.fileSystem)).start();
-//							(new Thread(new DFS(null,server.fileSystemPath,inSocket))).start();
 						}
 					}
 					else{
+						//Secondary Server behaviors on request
 						try {
 							RequestMessage request=new RequestMessage(header,data);
 							if (request.header.method==RequestHeader.MethodType.SYNC) {
@@ -218,17 +217,17 @@ public class RDFSTServer extends TimerTask{
 			try {
 				Socket toPrimaryServer=new Socket(ServerConnection.getPrimaryIP(),ServerConnection.getPrimaryPort());
 				if (!isSocketConnected(toPrimaryServer)) {
-					System.err.println(new Date()+": Primary Server is crashed.");
-					timer.cancel();
+					throw new Exception();
 				}else{
 					System.out.println(new Date()+": Socket to Primary Server is up.");
 				}
 //				toPrimaryServer.close();
 			} catch (Exception e) {
 				// TODO: handle exception
-				System.err.println(e.getLocalizedMessage());
+				System.err.println(new Date()+": Primary Server has crashed.");
+				timer.cancel();
+				System.exit(-1);
 			}
-			
 		}
 	}
 }
