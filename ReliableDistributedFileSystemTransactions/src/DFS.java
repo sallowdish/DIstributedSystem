@@ -26,6 +26,7 @@ public class DFS implements Runnable{
 	public static Set<Integer> workingTrancationID=new HashSet<Integer>(0);
 	public static Set<Integer> commitedTrancationID=new HashSet<Integer>(0);
 	public static Map<Integer, Log> workingLog=new ConcurrentHashMap<Integer,Log>(0);
+	public RDFSTServer server;
 
 
 
@@ -139,10 +140,12 @@ public class DFS implements Runnable{
 					targetLog.sequenceNum<request.header.sequenceNum 
 					//commit commited seq
 					|| targetLog.base>request.header.sequenceNum) {
-				response=new ResponseMessage(202,request,"Invalid Sequence #. Current base is at:"+targetLog.base+" and head is at:"+targetLog.sequenceNum);
+				response=new ResponseMessage(202,request,"Invalid Sequence #. Current base is at:"+targetLog.base+" and head is at:"+targetLog.sequenceNum+"\n");
 			}
 			else if(targetLog.base==request.header.sequenceNum){
-				//check commit ACK only
+				response=new ResponseMessage(request);
+				response.header.method=ResponseHeader.MethodType.valueOf("ACK");
+				response.body="Commited: Transaction#"+request.header.transactionID+" Sequence#"+request.header.sequenceNum+" was commited. Please check: "+targetLog.filepath+"\n";
 			}
 			else{
 				String syncLogString=targetLog.toString();
@@ -163,19 +166,24 @@ public class DFS implements Runnable{
 				syncLogString=syncLogString+Log.delimiter+request.header.sequenceNum;
 				RequestMessage logRequest=RequestMessage.logRequestMessage(syncLogString);
 				try {
-					Socket toSecondaryServerSocket=new Socket(ServerConnection.getSecondaryIP(),ServerConnection.getSecondaryPort());
+					Socket toSecondaryServerSocket=new Socket(server.serverConnection.getSecondaryIP(),server.serverConnection.getSecondaryPort());
 					DataOutputStream outSecondaryServer=new DataOutputStream(toSecondaryServerSocket.getOutputStream());
 					outSecondaryServer.writeBytes(logRequest.toString());
 					toSecondaryServerSocket.close();
+					response=new ResponseMessage(request);
+					response.header.method=ResponseHeader.MethodType.valueOf("ACK");
+					response.body="Commited:Write to local file :"+targetLog.filepath+"\n";
 				} catch (Exception e) {
 					// TODO: handle exception
-					System.err.println(e.getLocalizedMessage());
-					System.err.println("Fail to sync secondary server.");
+					System.err.println("Secondary Server has crashed."+e.getLocalizedMessage());
+					server.serverConnection.setSecondaryIP("");
+					server.serverConnection.setSecondaryPort(-1);
+					response=new ResponseMessage(request);
+					response.header.method=ResponseHeader.MethodType.valueOf("ACK");
+					response.body="Commited:Write to local file :"+targetLog.filepath+". But failed to sync Secondary Server.\n";
 				}
 			}
-			response=new ResponseMessage(request);
-			response.header.method=ResponseHeader.MethodType.valueOf("ACK");
-			response.body="Write to local file :"+targetLog.filepath;
+			
 		}else{
 			response=new ResponseMessage(201, request," ");
 		}
@@ -261,6 +269,7 @@ public class DFS implements Runnable{
 		//TODO: commit tnx
 		//TODO: write to disk
 		Log syncLog=new Log(request.data);
+		syncLog.filepath=root+"/"+(new File(syncLog.filepath).getName());
 		Integer commitSeq=Integer.valueOf(request.data.split(Log.delimiter)[2]);
 		workingLog.put(syncLog.transcationID, syncLog);
 		workingTrancationID.add(syncLog.transcationID);

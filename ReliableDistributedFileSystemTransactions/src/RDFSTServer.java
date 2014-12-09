@@ -31,6 +31,7 @@ public class RDFSTServer extends TimerTask{
 	private Timer timer;
 	private DFS fileSystem;
 	private int failCounter=0;
+	public ServerConnection serverConnection;
 
 	public RDFSTServer(){
 
@@ -46,9 +47,6 @@ public class RDFSTServer extends TimerTask{
 					fileSystemPath = Paths.get(System.getProperty("user.home") + fileSystemPath.toString().substring(1));
 				}
 				primaryRecordPath=Paths.get(cmd.getOptionValue("share"));
-				if (primaryRecordPath.startsWith("~" + File.separator)) {
-					primaryRecordPath = Paths.get(System.getProperty("user.home") + primaryRecordPath.toString().substring(1));
-				}
 				ip=cmd.getOptionValue("ip", "127.0.0.1");
 				port=Integer.valueOf(cmd.getOptionValue("port","8080"));
 				serverMode=cmd.hasOption("p")?MODE.PRIMARY:MODE.SECONDARY;
@@ -56,10 +54,12 @@ public class RDFSTServer extends TimerTask{
 				System.err.println("Invalid Input");
 			}
 		}
+		
+		serverConnection=new ServerConnection("", -1, "", -1);
 		System.out.println("ip:"+ip+"\nport:"+port+"\ndir:"+fileSystemPath+"\nshare:"+primaryRecordPath+"\nserverMode:"+serverMode);
 		try {
 			generalSocket =new ServerSocket(port,MAX_CONNECTION,InetAddress.getByName(ip));
-			generalSocket.setSoTimeout(10*1000);
+//			generalSocket.setSoTimeout(10*1000);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("Create Server Socket failed");
@@ -100,8 +100,8 @@ public class RDFSTServer extends TimerTask{
 					System.exit(-1);
 				}
 				//	add primary server info to ServerConnection
-				ServerConnection.setPrimaryIP(ip);
-				ServerConnection.setPrimaryPort(port);
+				serverConnection.setPrimaryIP(ip);
+				serverConnection.setPrimaryPort(port);
 
 			}
 		}
@@ -128,7 +128,7 @@ public class RDFSTServer extends TimerTask{
 				Socket testSocket=new Socket(primaryIP,primaryPort);
 				testSocket.setKeepAlive(true);
 				if(!isSocketConnected(testSocket)){
-					testSocket.close();
+//					testSocket.close();
 					throw new Exception();
 				}
 				else{
@@ -147,6 +147,7 @@ public class RDFSTServer extends TimerTask{
 
 		//set up DFS
 		fileSystem=new DFS(fileSystemPath);
+		fileSystem.server=this;
 	}
 
 	public static void main(String[] args) throws Exception{
@@ -167,10 +168,10 @@ public class RDFSTServer extends TimerTask{
 							if (header!=null && data!=null) {
 								RequestMessage request=new RequestMessage(header,data);
 								if (request.header.method==RequestHeader.MethodType.PING) {
-									if (ServerConnection.updateSecondaryServerSocketAddress(request.data)) {
+									if (server.serverConnection.updateSecondaryServerSocketAddress(request.data)) {
 										System.out.println("Secondary Server is recorded.");
 									}
-//									inSocket.close();
+									inSocket.close();
 								}
 								else{
 									server.fileSystem.request=request;
@@ -221,7 +222,7 @@ public class RDFSTServer extends TimerTask{
 			} catch (Exception e) {
 				// TODO: handle exception
 				//				e.printStackTrace();
-				System.err.println("no acceptable socket");
+//				System.err.println("no acceptable socket. "+e.getLocalizedMessage());
 			}
 		}
 	}
@@ -231,9 +232,9 @@ public class RDFSTServer extends TimerTask{
 			DataOutputStream testOut=new DataOutputStream(socket.getOutputStream());
 			testOut.writeBytes(RequestMessage.PingRequestMessage(ip+":"+port).toString());
 			//Update Server Connection
-			ServerConnection.setPrimaryIP(socket.getInetAddress().toString().substring(1));
-			ServerConnection.setPrimaryPort(socket.getPort());
-//			socket.close();
+			serverConnection.setPrimaryIP(socket.getInetAddress().toString().substring(1));
+			serverConnection.setPrimaryPort(socket.getPort());
+			socket.close();
 			return true;
 		} catch (Exception e) {
 			// DONE: handle exception
@@ -250,10 +251,10 @@ public class RDFSTServer extends TimerTask{
 			out.println("Primary Server:");
 			out.println(ip.toString()+":"+port);
 			out.close();
-			ServerConnection.setPrimaryIP(ip);
-			ServerConnection.setPrimaryPort(port);
-			ServerConnection.setSecondaryIP("");
-			ServerConnection.setPrimaryPort(-1);
+			serverConnection.setPrimaryIP(ip);
+			serverConnection.setPrimaryPort(port);
+			serverConnection.setSecondaryIP("");
+			serverConnection.setPrimaryPort(-1);
 			return true;
 		}catch (Exception e) {
 			System.err.println("Fail to modify to primary.txt");
@@ -270,14 +271,14 @@ public class RDFSTServer extends TimerTask{
 		if(serverMode==MODE.PRIMARY){
 
 		}else{
-			try(Socket toPrimaryServer=new Socket(ServerConnection.getPrimaryIP(),ServerConnection.getPrimaryPort());) {
+			try(Socket toPrimaryServer=new Socket(serverConnection.getPrimaryIP(),serverConnection.getPrimaryPort());) {
 
 				if (!isSocketConnected(toPrimaryServer)) {
 					throw new Exception();
 				}else{
 					System.out.println(new Date()+": Socket to Primary Server is up.");
 				}
-				toPrimaryServer.close();
+//				toPrimaryServer.close();
 				failCounter=0;
 			} catch (Exception e) {
 				// TODO: handle exception

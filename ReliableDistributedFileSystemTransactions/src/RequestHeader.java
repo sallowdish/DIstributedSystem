@@ -60,7 +60,7 @@ public class RequestHeader {
 			return method.name()+" "+transactionID+" "+sequenceNum+" "+contentLength+"\r\n\r\n";
 		} catch (Exception e) {
 			// DONE: handle exception
-			System.err.println(e.getLocalizedMessage());
+			System.err.println(e.getLocalizedMessage()+"Fail to encode RequestHeader");
 			throw e;
 		}
 	}

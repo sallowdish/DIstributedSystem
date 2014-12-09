@@ -1,10 +1,10 @@
 
 
 public class ServerConnection {
-	private static String primaryIP="";
-	private static Integer primaryPort=-1;
-	private static String secondaryIP="";
-	private static Integer secondaryPort=-1;
+	private String primaryIP="";
+	private Integer primaryPort=-1;
+	private String secondaryIP="";
+	private Integer secondaryPort=-1;
 	
 	public ServerConnection(String primaryIP, Integer primaryPort, String secondaryIP,Integer secondaryPort){
 		setPrimaryIP(primaryIP);
@@ -15,7 +15,7 @@ public class ServerConnection {
 	
 	
 	
-	public static boolean updatePrimaryServerSocketAddress(String info){
+	public boolean updatePrimaryServerSocketAddress(String info){
 		try {
 			String[] lst=info.split(":");
 			primaryIP=lst[0];
@@ -28,7 +28,7 @@ public class ServerConnection {
 		}
 	}
 
-	public static boolean updateSecondaryServerSocketAddress(String info){
+	public boolean updateSecondaryServerSocketAddress(String info){
 		try {
 			String[] lst=info.split(":");
 			if (secondaryIP.equals(lst[0]) && secondaryPort.equals(Integer.valueOf(lst[1]))) {
@@ -45,35 +45,35 @@ public class ServerConnection {
 	}
 
 	
-	public static String getPrimaryIP() {
+	public String getPrimaryIP() {
 		return primaryIP;
 	}
 
-	public static void setPrimaryIP(String primaryIP) {
-		ServerConnection.primaryIP = primaryIP;
+	public void setPrimaryIP(String primaryIP) {
+		this.primaryIP = primaryIP;
 	}
 
-	public static String getSecondaryIP() {
+	public String getSecondaryIP() {
 		return secondaryIP;
 	}
 
-	public static void setSecondaryIP(String secondaryIP) {
-		ServerConnection.secondaryIP = secondaryIP;
+	public void setSecondaryIP(String secondaryIP) {
+		this.secondaryIP = secondaryIP;
 	}
 
-	public static Integer getPrimaryPort() {
+	public Integer getPrimaryPort() {
 		return primaryPort;
 	}
 
-	public static void setPrimaryPort(Integer primaryPort) {
-		ServerConnection.primaryPort = primaryPort;
+	public void setPrimaryPort(Integer primaryPort) {
+		this.primaryPort = primaryPort;
 	}
 
-	public static Integer getSecondaryPort() {
+	public Integer getSecondaryPort() {
 		return secondaryPort;
 	}
 
-	public static void setSecondaryPort(Integer secondaryPort) {
-		ServerConnection.secondaryPort = secondaryPort;
+	public void setSecondaryPort(Integer secondaryPort) {
+		this.secondaryPort = secondaryPort;
 	}
 }

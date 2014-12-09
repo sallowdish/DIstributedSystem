@@ -47,7 +47,7 @@ public class ResponseHeader {
 			return method.name()+" "+transactionID+" "+sequenceNum+" "+errorCode+" "+contentLength+"\r\n\r\n";
 		} catch (Exception e) {
 			// TODO: handle exception
-			System.err.println(e.getLocalizedMessage());
+			System.err.println(e.getLocalizedMessage()+"Fail to encode ResponseHeader");
 			throw e;
 		}
 	}
