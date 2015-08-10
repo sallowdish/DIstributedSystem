@@ -1,0 +1,27 @@
+Avaliable Bash Command:
+
+	make clean	
+		# to remove unexpected files
+
+	make 
+		# to complie the file   
+
+Start Server:
+	java -cp libs/commons-cli-1.2.jar:. RDFSTServer [-ip ipaddress -port portNum] -dir working_directory -share path_to_primary.txt [-p]
+
+	e.g. To start a primary server:
+		java -cp libs/commons-cli-1.2.jar:. RDFSTServ -ip 127.0.0.1 -port 34567 -dir ~/Desktop/RDFS -share ~/Desktop/RDFS/primary.txt
+
+Important:	
+	# If no working_directory provided, server will use /home/user/ as default
+	
+	# Please start Primary Server first, then Secondary one
+	
+	# Secondary Server check if the Primary Server every 3 seconds. To reduce the chance of huge delay and missing package, I assume the Primary Server is down only if the checking fails 3 times in a row. In other words, it could take up to 9 seconds for Secondary noticing the fail-stop of Primary.
+	
+	# Known Issue:
+		1. Sometime Primary Server does not notice the Secondary one becomes alive. This is because of the socketlock of ServerSocket.accept(). To solve the issue, just make another request from TestClient. The socket will be unlocked and Primary Server will process the notification from Secondary Server before processing the newly made request.
+
+		2. The transcation(s) commited to Secondary Server when the Primary Server is down will not be reflected on Primary after restarting. Because, due to the limit of my design, this feature will require additional stage of file basis synchroniztion at the startup of a server. Using a standalone database might be a better choice than the file system.
+
+I thought this assignment would due on Nov 3rd... I need to take a snap now...Thank you
