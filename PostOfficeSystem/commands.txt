@@ -1,0 +1,13 @@
+14
+DAY
+PACKAGE Berlin Gretel1 Nilreb 20000 10
+DAY
+DAY
+DAY
+PICKUP Nilreb Gretel1
+DAY
+PICKUP Nilreb Gretel1
+DAY
+PICKUP Nilreb Gretel1
+
+
