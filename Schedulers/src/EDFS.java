@@ -1,14 +1,12 @@
-import java.util.ArrayList;
-
 /**
  * Created by Ray on 15-08-10.
  */
-public class EDFS implements Scheduler{
-    PQueue<PrioritizedObject<Task>> schedulerBuffer = null;
+public class EDFS extends EDF implements Scheduler{
     Stack<Task> schedulerStack = null;
 
     public EDFS()
     {
+        super();
         setup();
     }
 
@@ -18,7 +16,7 @@ public class EDFS implements Scheduler{
     public void setup()
     {
         // worst case: 1024 tasks w/ same priority and 1024 tasks w/ unique priority
-        schedulerBuffer = new PQueue<PrioritizedObject<Task>>(MAXTASKCOUNT,MAXTASKCOUNT);
+        super.setup();
         schedulerStack = new Stack<Task>(MAXTASKCOUNT);
     }
 
@@ -28,66 +26,41 @@ public class EDFS implements Scheduler{
      * and also at the beginning of the simulation.
      * @return int stands for how much time are assigned to task to use CPU
      */
-    public int schedule()
-    {
-        // if current task is not finished with the time assigned,
-        // put it back to task queue
+    public int schedule() {
+        // pause current task
         Task currentTask = Sim.on_cpu;
+        Task nextTask = null;
         Sim.on_cpu = null;
         // if current task is completed or null
-        if((currentTask != null && currentTask.finished) || currentTask == null)
-        {
-            Task nextTask = null;
+        if ((currentTask != null && currentTask.finished) || currentTask == null) {
             // if there is any task in stack
-            if (schedulerStack.count() > 0)
-            {
+            if (schedulerStack.count() > 0) {
                 nextTask = schedulerStack.pop();
             }
-            else
-            {
-                nextTask = schedulerBuffer.remove().object;
-            }
-            if(nextTask != null) {
-                Sim.on_cpu = nextTask;
-                return nextTask.time_required - nextTask.time_worked;
-            }
-            else
-            {
-                return -1;
+            // fetch next task from scheduler buffer
+            else {
+                PrioritizedObject<Task> candidate = schedulerBuffer.remove();
+                nextTask = candidate != null ? candidate.object : null;
             }
         }
         // new task arrived
-        else if( currentTask != null && !currentTask.finished)
-        {
-            PrioritizedObject<Task> nextTask = schedulerBuffer.remove();
-            if (nextTask.object.deadline < currentTask.deadline)
-            {
+        else if (currentTask != null && !currentTask.finished) {
+            PrioritizedObject<Task> candidate = schedulerBuffer.remove();
+            nextTask = candidate != null ? candidate.object : null;
+            // if new task is more urgent
+            if (nextTask.deadline < currentTask.deadline) {
                 // put current task into stack
                 schedulerStack.push(currentTask);
-                Sim.on_cpu = nextTask.object;
-                return nextTask.object.time_required - nextTask.object.time_worked;
-            }
-            else
-            {
+            } else {
                 // put next task back to buffer
-                schedulerBuffer.add(nextTask);
-                return currentTask.time_required - currentTask.time_worked;
+                new_task(nextTask);
+                nextTask = currentTask;
             }
+        } else {
+            nextTask = null;
         }
-        else
-        {
-            Sim.on_cpu = null;
-            return -1;
-        }
-    }
-
-    /**
-     * Add a new task in to task queue
-     * @param t Task instance which stands for the new arrived task
-     */
-    public void new_task(Task t)
-    {
-        schedulerBuffer.add(new PrioritizedObject<Task>(t, MAXTIMECOUNT-(t.deadline - Sim.timestamp)));
+        Sim.on_cpu = nextTask;
+        return nextTask == null ? null : nextTask.time_required - nextTask.time_worked;
     }
 
     /**
@@ -97,25 +70,6 @@ public class EDFS implements Scheduler{
      */
     public void change_deadline(Task t, int old_deadline)
     {
-//
-//        PrioritizedObject<Task> nextTask = schedulerBuffer.remove();
-//        while(nextTask != null && nextTask.object != t)
-//        {
-//            temp.add(nextTask);
-//            nextTask = schedulerBuffer.remove();
-//        }
-//        if (nextTask == null)
-//        // no such task in scheduler right now
-//        {
-//            return;
-//        }
-//        else
-//        {
-//            schedulerBuffer.add(new PrioritizedObject<Task>(t, MAXTIMECOUNT-(t.deadline - Sim.timestamp)));
-//            for(PrioritizedObject<Task> task : temp)
-//            {
-//                schedulerBuffer.add(task);
-//            }
-//        }
+        // skip this part per requirement
     }
 }

@@ -1,5 +1,3 @@
-import com.sun.javafx.tk.Toolkit;
-
 /**
  * Created by t-razhen on 7/31/2015.
  */

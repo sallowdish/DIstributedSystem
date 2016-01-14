@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-
 /**
  * Created by Ray on 15-07-11.
  */
@@ -79,13 +77,13 @@ public class PQueue<T extends PrioritizedObject> {
         return  false;
     }
 
-    public ArrayList<T> getAllObject()
-    {
-        ArrayList<T> result = new ArrayList<>();
-        for(Queue q : simpleQueue)
-        {
-            result.addAll(q.getAllObject());
-        }
-        return result;
-    }
+//    public ArrayList<T> getAllObject()
+//    {
+//        ArrayList<T> result = new ArrayList<>();
+//        for(Queue q : simpleQueue)
+//        {
+//            result.addAll(q.getAllObject());
+//        }
+//        return result;
+//    }
 }

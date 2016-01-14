@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-
 /**
  * Created by Ray on 15-07-09.
  */
@@ -108,14 +106,14 @@ public class Queue<T> {
         return false;
     }
 
-    public ArrayList<T> getAllObject(){
-        ArrayList<T> result = new ArrayList<>();
-        Node ptr = head;
-        while(ptr != null)
-        {
-            result.add((T)ptr.p);
-            ptr = ptr.next;
-        }
-        return result;
-    }
+//    public ArrayList<T> getAllObject(){
+//        ArrayList<T> result = new ArrayList<>();
+//        Node ptr = head;
+//        while(ptr != null)
+//        {
+//            result.add((T)ptr.p);
+//            ptr = ptr.next;
+//        }
+//        return result;
+//    }
 }

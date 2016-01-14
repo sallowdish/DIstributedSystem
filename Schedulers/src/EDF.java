@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-
 /**
  * Created by Ray on 15-08-09.
  */
@@ -27,46 +25,39 @@ public class EDF implements Scheduler {
      */
     public int schedule()
     {
-        // if current task is not finished with the time assigned,
-        // put it back to task queue
+// pause current task
         Task currentTask = Sim.on_cpu;
-        Sim.on_cpu = null;
-        // if current task is completed
-        if((currentTask != null && currentTask.finished) || currentTask == null)
-        {
-            Task nextTask = schedulerBuffer.remove().object;
-            if (nextTask != null) {
-                Sim.on_cpu = nextTask;
-                return nextTask.time_required - nextTask.time_worked;
-            }
-            else
-            {
-                return 0;
-            }
+        Task nextTask;
+        // if current task is completed or cpu is idle
+        if (currentTask == null || (currentTask != null && currentTask.finished)) {
+            PrioritizedObject<Task> candidate = schedulerBuffer.remove();
+            nextTask = candidate != null ? candidate.object : null;
         }
         // new task arrived
-        else if( currentTask != null && !currentTask.finished)
-        {
-            PrioritizedObject<Task> nextTask = schedulerBuffer.remove();
-            if (nextTask.object.deadline < currentTask.deadline)
-            {
+        else if (currentTask != null && !currentTask.finished) {
+            PrioritizedObject<Task> candidate = schedulerBuffer.remove();
+            nextTask = candidate != null ? candidate.object : null;
+            if (nextTask != null && nextTask.deadline < currentTask.deadline) {
                 // put current task back to buffer
                 new_task(currentTask);
-                Sim.on_cpu = nextTask.object;
-                return nextTask.object.time_required - nextTask.object.time_worked;
             }
             else
             {
                 // put next task back to buffer
-                schedulerBuffer.add(nextTask);
-                return currentTask.time_required - currentTask.time_worked;
+                // keep working on current task
+                if (nextTask != null) {
+                    new_task(nextTask);
+                }
+                nextTask = currentTask;
             }
         }
         else
         {
-            Sim.on_cpu = null;
-            return -1;
+            nextTask = null;
         }
+
+        Sim.on_cpu = nextTask;
+        return nextTask == null ? null :nextTask.time_required - nextTask.time_worked;
     }
 
     /**
@@ -75,7 +66,8 @@ public class EDF implements Scheduler {
      */
     public void new_task(Task t)
     {
-        schedulerBuffer.add(new PrioritizedObject<Task>(t, MAXTIMECOUNT-(t.deadline - Sim.timestamp)));
+        int priority = t.deadline - Sim.timestamp > 0 ? MAXTIMECOUNT - (t.deadline - Sim.timestamp) - 1 : MAXTIMECOUNT - 1;
+        schedulerBuffer.add(new PrioritizedObject<Task>(t, priority));
     }
 
     /**
@@ -85,11 +77,14 @@ public class EDF implements Scheduler {
      */
     public void change_deadline(Task t, int old_deadline)
     {
-        ArrayList<PrioritizedObject<Task>> temp = new ArrayList<PrioritizedObject<Task>>();
+//        ArrayList<PrioritizedObject<Task>> temp = new ArrayList<PrioritizedObject<Task>>();
+        PrioritizedObject<Task>[] temp = new PrioritizedObject[schedulerBuffer.getTotalSize()];
         PrioritizedObject<Task> nextTask = schedulerBuffer.remove();
+        int count = 0;
         while(nextTask != null && nextTask.object != t)
         {
-            temp.add(nextTask);
+            temp[count] = nextTask;
+            count++;
             nextTask = schedulerBuffer.remove();
         }
         if (nextTask == null)
@@ -99,10 +94,13 @@ public class EDF implements Scheduler {
         }
         else
         {
-            schedulerBuffer.add(new PrioritizedObject<Task>(t, MAXTIMECOUNT-(t.deadline - Sim.timestamp)));
+            new_task(t);
             for(PrioritizedObject<Task> task : temp)
             {
-                schedulerBuffer.add(task);
+                if(task != null)
+                {
+                    schedulerBuffer.add(task);
+                }
             }
         }
     }
